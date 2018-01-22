@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<link rel="stylesheet" type="text/css" href="css/dahuiji.css"/>
+	</head>
+	<body>
+		<div class="main" id="main">
+			<ul class="options" id="options">
+				<li level="1">非常简单</li>
+				<li level="2">比较简单</li>
+				<li level="3">比较困难</li>
+				<li level="4">春哥附体</li>
+			</ul>
+		</div>
+	</body>
+	<script src="../../public.js" type="text/javascript" charset="utf-8"></script>
+	<script type="text/javascript">
+		/*四个角色
+		 * 战斗机：创建  移动（监听鼠标或键盘）开火
+		 * 敌机 ：创建 移动  （三种不同类型）
+		 * 子弹:创建 移动   碰撞。。。。
+		 * 游戏引擎：开始菜单    加载logo和移动动画飞机   背景移动
+		 */
+		window.onload=function(){
+			new GameEngine().initMenu();
+		}
+		
+		//游戏引擎    页面加载
+		function GameEngine(){
+			if(!GameEngine.instance){  //单例模式
+				GameEngine.instance={
+				level : 0,	//记录游戏难度属性				//单例里面    属性和方法前面不加this   等号=用冒号：代替   逗号分隔    json格式
+				body : $id("main"),  //获取游戏引擎背景属性
+				oUl :$id("options"),
+				enemes:new Set(),
+				initMenu : function(){
+					this.oUl.onclick=function(evt){
+					var e=evt||event;
+					var target=e.target||e.srcElement;
+					if(target.nodeName=="LI"){
+						this.level=target.getAttribute("level");  //记录level的属性值        然后删除菜单ul
+						this.oUl.remove();//然后引出动画   logo   背景移动
+						this.gameStart();
+						
+					}
+					}.bind(this)
+				},
+				gameStart : function(){
+					this.logo=createEle("div");
+					this.logo.className="logo";
+					this.loading=createEle("div");
+					this.loading.className="loading";
+					this.body.appendChild(this.logo);
+					this.body.appendChild(this.loading);
+					//  loading动画
+					var timer=null;
+					var index=1;
+					timer=setInterval(function(){
+						this.loading.style.backgroundImage="url(images/loading"+(++index)+".png)";
+						if(index==3){
+							index=0;
+						}
+					}.bind(this),500);
+					
+					//背景移动
+					var count=0;
+					setInterval(function(){
+						this.body.style.backgroundPositionY=++count + 'px';
+					}.bind(this),10)
+					
+					
+					//3秒后动画飞机和logo消失  战斗机出场
+					setTimeout(function(){
+						clearInterval(timer);
+						this.logo.remove();
+						this.loading.remove();
+						
+						//战机出场
+						this.play();
+					}.bind(this),3000)
+				},
+				//战斗机   出场
+				play : function(){
+					
+					new MyPlane().show();
+					this.autoCreateEnemy();
+				},
+				height : function(){ //游戏页面的宽度
+					return this.body.offsetHeight;
+				},
+				width : function(){ //游戏页面的宽度
+					return this.body.offsetWidth;
+				},
+				left :function(){
+					return this.body.offsetLeft;
+				},
+				autoCreateEnemy :function(){
+					setInterval(function(){
+						if(Math.random()>0.2){
+							this.enemes.add(new Enemy("small").init().move());
+						}
+					}.bind(this),800)
+					setInterval(function(){
+						if(Math.random()>0.35){
+							this.enemes.add(new Enemy("middle").init().move());
+						}
+					}.bind(this),1000)
+					setInterval(function(){
+						if(Math.random()>0.65){
+							this.enemes.add(new Enemy("large").init().move());
+						}
+					}.bind(this),2000)
+				}	
+				
+			}
+			}
+			return GameEngine.instance;
+		}
+		
+		
+		//战斗机
+		function MyPlane(){
+			if(!MyPlane.instance){
+				MyPlane.instance={
+					show : function(){
+						this.init();//创建战斗机
+						this.addListener({type:"mouse"});
+						this.fire();//开火
+					},
+					fire : function(){
+						//开火  创建子弹
+					setInterval(function(){
+						new Bullet().init().move();
+					},100*new GameEngine().level)
+					},
+					addListener :function(obj){
+						switch(obj.type){
+							case "mouse":{
+								new GameEngine().body.addEventListener("mousemove",function(evt){
+									var e=evt||event;
+									//改变飞机的left让飞机动起来
+									var _left=e.pageX-new GameEngine().left()-this.width()/2;
+									
+								_left=Math.min(new GameEngine().width()-this.width(),Math.max(0,_left));
+								this.left(_left)
+								}.bind(this))
+								break;
+							}
+							case "key":{
+								document.addEventListener("keydown",function(e){
+									var e=evt||event;
+									var code=e.keyCode||e.which;
+									switch(code){
+										case 37:{
+											var _left=this.left()-7;
+											_left=Math.max(0,_left);
+											this.left(_left);
+											break;
+										}
+										case 39 :{
+											this.left(Math.min(new GameEngine().width()-this.width(),this.left()+7));
+											break;
+										}
+									}
+								}.bind(this))
+								break;
+							}
+							
+						}
+					},
+					init :function(){
+						this.body = createEle("div");
+						new GameEngine().body.appendChild(this.body);
+						this.body.className="my-warplain";
+						var _left=(new GameEngine().width()-this.width())/2; //中心点
+						this.left(_left);
+						this.body.style.bottom="0px";
+					},
+					left : function(val){
+						if(val || val==0){
+							this.body.style.left=val +"px";
+						}
+						return this.body.offsetLeft;
+					},
+					width :function(){
+						return this.body.offsetWidth;
+					},
+					height :function(){
+						return this.body.offsetHeight;
+					},
+					top :function(){
+						return this.body.offsetTop;
+					}
+			
+				}
+			}
+			return MyPlane.instance;
+		}
+		
+		
+		//子弹
+		function Bullet(){
+			this.init=function(){
+				this.body=createEle("div");
+				new GameEngine().body.appendChild(this.body);
+				this.body.className="bullet";
+				var _left=new MyPlane().left()+new MyPlane().width()/2 - this.width()/2;
+				var _top=new MyPlane().top()-this.height();
+				this.left(_left);
+				this.top(_top);
+				return this;
+			}
+			this.left=function(val){
+				if(val || val==0){
+					this.body.style.left=val+"px";
+				}
+				return this.body.offsetLeft;
+			}
+			this.top=function(val){
+				if(val||val==0){
+					this.body.style.top=val+'px';
+				}
+				return this.body.offsetTop;
+			}
+			this.width=function(){
+				return this.body.offsetWidth;
+			}
+			this.height=function(){
+				return  this.body.offsetHeight;
+			}
+			this.move=function(){
+				this.timer=setInterval(function(){
+					this.top(this.top()-5);
+					if(this.top()<-this.height()){
+						clearInterval(this.timer);
+						this.body.remove();
+					}
+					var enemes=new GameEngine().enemes;
+					for(var en of enemes){
+						if(pz(this.body,en.body)){
+							this.explode();
+							en.hurt();
+							clearInterval(this.timer);
+						}
+					}
+				}.bind(this),30)
+			}
+			this.explode=function(){
+				this.body.className="bullet_die";
+				setTimeout(function(){
+					this.body.style.backgroundImage="url(images/die2.png)";
+					setTimeout(function(){
+						this.body.remove();
+					}.bind(this),100)
+				}.bind(this),200)
+			}
+		}
+		
+		
+		
+		//敌机
+		function Enemy(type){
+			this.type=type;
+			this.body=createEle("div");
+			this.init=function(){
+				switch(this.type){
+					case "small":{
+						this.body.className="enemy-small";
+						new GameEngine().body.appendChild(this.body);
+						this.speed=8;
+						this.hp=1;
+						this.imgs=["plain1_die1.png","plain1_die2.png","plain1_die3.png"];
+						this.left(rand(0,new GameEngine().width()-this.width()));
+						this.top(-this.height());
+						break;
+					}
+					case "middle" :{
+						this.body.className="enemy-middle";
+						new GameEngine().body.appendChild(this.body);
+						this.imgs=["plain2_die1.png","plain2_die2.png","plain2_die3.png","plain2_die4.png"];
+						this.speed=5;
+						this.hp=3;
+						this.left(rand(0,new GameEngine().width()-this.width()));
+						this.top(-this.height());
+						break;
+					}
+					case "large" :{
+"enemy-large";
+						new GameEngine().body.appendChild(this.body);
+						this.speed=3;
+						this.hp=5;
+						this.imgs=["plain3_die1.png","plain3_die2.png","plain3_die3.png","plain3_die4.png","plain3_die5.png","plain3_die6.png"];
+						this.left(rand(0,new GameEngine()-this.width()));
+						this.top(-this.height())
+						break;
+					}
+				}
+				return this;
+			}
+			this.explode=function(){
+				clearInterval(this.timer);
+				new GameEngine().enemes.delete(this);
+				var t=setInterval(function(){
+					if(this.imgs.length==0){
+						this.body.remove();
+						return;
+					}
+					this.body.style.backgroundImage="url(images/"+this.imgs.shift()+")";
+				}.bind(this),300)
+			}
+			this.move=function(){
+				this.timer=setInterval(function(){
+					this.top( this.top() + this.speed );
+					if( this.top() > new GameEngine().height() ){
+						clearInterval(this.timer);
+						this.body.remove();
+					}
+				}.bind(this),30)
+				return this;
+			}
+			this.left=function(val){
+				if(val||val==0){
+					this.body.style.left=val+'px';
+				}
+				return this.body.offsetLeft;
+			}
+			this.top=function(val){
+					if(val||val==0){
+					this.body.style.top=val+'px';
+				}
+				return this.body.offsetTop;
+			}
+			this.width=function(){
+				return this.body.offsetWidth;
+			}
+			this.height=function(){
+				return this.body.offsetHeight;
+			}
+			this.hurt=function(){
+				--this.hp==0?this.explode():"";
+			}
+		}
+	</script>
+</html>
