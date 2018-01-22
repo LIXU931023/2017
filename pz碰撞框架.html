@@ -1,0 +1,67 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title></title>
+<style type="text/css">
+*{
+			margin: 0;
+			padding: 0;
+		}
+		#div1{
+			width: 100px;
+			height: 100px;
+			background: blue;
+			position: absolute;
+			left: 100px;
+			top: 100px;
+			cursor: move;
+		}
+		#div2{
+			width: 200px;
+			height: 200px;
+			background: orange;
+			margin: 300px;
+		}
+
+</style>
+ 
+</head>
+
+<body>
+	<div id = "div1"></div>
+	<div id = "div2"></div>
+</body>
+</html>
+<script>
+	var odiv1 = document.getElementById("div1");
+	var odiv2 = document.getElementById("div2");
+	odiv1.onmousedown = function(e){
+		var e = e ||window.event;
+		var disX = e.pageX - odiv1.offsetLeft;
+		var disY = e.pageY  - odiv1.offsetTop;
+		document.onmousemove = function(e){
+			var e = e || event;
+			odiv1.style.left = e.pageX - disX + "px";
+			odiv1.style.top = e.pageY - disY + "px";
+			
+		}
+	}
+	function pz(obj1,obj2){
+		var L1 = obj1.offsetLeft;
+		var R1 = obj1.offsetWith + obj1.offsetLeft;
+		var T1 = obj1.offsetTop;
+		var B1 = obj1.offsetTop + obj1.offsetHeight;
+		
+		var L2 = obj2.offsetLeft;
+		var R2 = obj2.offsetWidth + obj2.offsetLeft
+		var T2 = obj2.offsetTop;
+		var B2 = obj2.offsetHeight + obj2.offsetTop;
+		if(R1 < L2 || L1 > R2 || B1 < T2 || T1 > B2){
+			return false;
+		}else{
+			return true;
+		}
+	}
+</script>
